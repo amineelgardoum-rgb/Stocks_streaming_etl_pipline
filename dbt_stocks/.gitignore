@@ -1,0 +1,8 @@
+analyses
+target/
+dbt_packages/
+logs/
+macros
+seeds
+snapshots
+tests
