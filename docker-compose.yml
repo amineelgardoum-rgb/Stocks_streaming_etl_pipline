@@ -28,19 +28,18 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     healthcheck:
-      test: ["CMD","nc","-z","localhost","9092"]
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
       interval: 5s
       retries: 10
-      start_period: 10s 
+      start_period: 10s
       timeout: 5s
-      
-
 
   kafdrop:
     image: obsidiandynamics/kafdrop:latest
     container_name: kafdrop
     depends_on:
-      - kafka
+      kafka:
+        condition: service_healthy
     ports:
       - "9000:9000"
     environment:
@@ -74,13 +73,17 @@ services:
         condition: service_healthy
     volumes:
       - ./producer:/app/producer
+    # restart: always
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import socket; s=socket.socket(); s.connect(('kafka', 9092))\""]
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import socket; s=socket.socket(); s.connect((''kafka'', 9092))"',
+        ]
       interval: 5s
       retries: 5
       start_period: 5s
       timeout: 5s
-
 
   consumer:
     build:
@@ -95,6 +98,7 @@ services:
         condition: service_healthy
     volumes:
       - ./consumer:/app/consumer
+    # restart: always
     # healthcheck:
     #   test: ["CMD", "nc", "-z", "kafka", "9092"]  # example: ensure Kafka port is open
     #   interval: 5s
@@ -127,6 +131,7 @@ services:
     env_file:
       - .env
     volumes:
+      - ./dags:/app/dags
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
@@ -175,8 +180,9 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
-    entrypoint: > 
+    entrypoint: >
       /bin/bash -c "airflow db init && airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin"
 
 volumes:
   postgres_data:
+ 

@@ -1,6 +1,7 @@
 # from math import prod
 from kafka import KafkaProducer
 import json
+from display_logging import logging
 
 
 def create_producer(broker, port, topics=None):
@@ -14,8 +15,12 @@ def create_producer(broker, port, topics=None):
             if not topics:
                 raise ValueError("No Topic specified and no default topics set !")
             for t in topics:
+                logging.info(f"sending data to {t}.")
                 producer.send(t, value=value)
         else:
+            logging.info(f"sending data to topic:{topic}.")
             producer.send(topic, value=value)
+
+    logging.info("Producer Created Successfully.")
 
     return producer, send_messages

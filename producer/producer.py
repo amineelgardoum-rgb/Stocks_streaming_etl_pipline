@@ -1,11 +1,12 @@
 # ----- producer of kafka to make the streaming logic ------- #
-import time
+from display_logging import logging
 from create_producer import create_producer
 from fetch_job import fetch_quotes
 import os
 from heartbeat import heartbeat_check
 import threading
 from dotenv import load_dotenv
+from produce_messages import produce_messages
 
 load_dotenv()  # just to load the env file
 api_key = os.getenv("api_key")
@@ -20,12 +21,6 @@ SYMBOLS = ["AAPL", "TSLA", "GOOGL", "AMZN"]  # this are the companies to monitor
 producer, send_messages = create_producer(
     "kafka", 9092, topics=[qoute_topic, heartbeat_topic]
 )
-threading.Thread(target=heartbeat_check,daemon=True).start()
+threading.Thread(target=heartbeat_check, daemon=True).start()
 
-while True:
-    for symbol in SYMBOLS:
-        quote = fetch_quotes(symbol, BASE_URL, api_key)
-        if quote:
-            print(f"Producing:{quote}")
-            send_messages(value=quote, topic=qoute_topic)
-    time.sleep(6)
+produce_messages(SYMBOLS, fetch_quotes, send_messages, BASE_URL, api_key, qoute_topic)

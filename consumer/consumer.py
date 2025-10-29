@@ -1,44 +1,25 @@
 # ------ consumer logic ------ #
-import boto3
-import json
-from kafka import KafkaConsumer
-import time
-from botocore.exceptions import ClientError
-# init the s3 client
-s3 = boto3.client(
-    "s3",
-    endpoint_url="http://minio:9000",
-    aws_access_key_id="admin",
-    aws_secret_access_key="password123",
-)
+from consume_messages import consume_messages
+from display_logging import logging
+# import os
+from create_consumer import create_consumer
+from s3_init import create_s3
+from check_loop import wait_for_kafka
+
 bucket_name = "bronze-transactions"
-try:
-    s3.head_bucket(Bucket=bucket_name)
-    print(f"The bucket {bucket_name} already exists.")
-except ClientError:
-    s3.create_bucket(Bucket=bucket_name)
-    print(f"Created the {bucket_name}.")
-    
-# s3.create_bucket(Bucket=bucket_name)
-# define the consumer
-consumer = KafkaConsumer(
-    "stock_qoutes",
-    bootstrap_servers=["kafka:9092"],
-    enable_auto_commit=True,
-    group_id="bronze-consumer",
-    auto_offset_reset="earliest",
-    value_deserializer=lambda v: json.loads(v.decode("utf-8")),
-)
-print("Customer streaming and saving to MINIO.........")
-for message in consumer:
-    record = message.value
-    symbol = record.get("symbol")
-    ts = record.get("fetched_time", int(time.time()))  # time served
-    key = f"{symbol}/{ts}.json"  # to format the objects in minio bucket
-    s3.put_object(
-        Bucket=bucket_name,
-        Key=key,
-        Body=json.dumps(record),
-        ContentType="application/json",
-    )
-    print(f"Saved record for {symbol}= s3://{bucket_name}/{key}")
+endpoint_url = "http://minio:9000"
+MINIO_ROOT_USER = "admin"
+MINIO_ROOT_PASSWORD = "password123"
+s3 = create_s3(endpoint_url, MINIO_ROOT_USER, MINIO_ROOT_PASSWORD, bucket_name)
+topic = "stock_qoutes"
+broker = "kafka"
+port = 9092
+enable_auto_commit = True
+group_id = "bronze-consumer"
+auto_offset_reset = "earliest"
+wait_for_kafka(broker=broker, port=port)
+consumer = create_consumer(topic, broker, port, True, group_id, auto_offset_reset)
+logging.info("################################################################################################")
+logging.info(f"Customer streaming and saving to MINIO.........,under the topic: {topic}..., and the bucket: {bucket_name}...")
+logging.info("###########################################################################################")
+consume_messages(consumer, s3, bucket_name)
