@@ -1,3 +1,4 @@
+{{ config(materialized='table') }}
 SELECT symbol,current_price,
 ROUND(day_high,2) AS day_high,
 ROUND(day_low,2) AS day_low,

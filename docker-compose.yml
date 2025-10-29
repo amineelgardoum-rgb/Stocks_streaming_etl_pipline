@@ -72,6 +72,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    volumes:
+      - ./producer:/app/producer
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import socket; s=socket.socket(); s.connect(('kafka', 9092))\""]
       interval: 5s
@@ -91,6 +93,8 @@ services:
         condition: service_healthy
       producer:
         condition: service_healthy
+    volumes:
+      - ./consumer:/app/consumer
     # healthcheck:
     #   test: ["CMD", "nc", "-z", "kafka", "9092"]  # example: ensure Kafka port is open
     #   interval: 5s

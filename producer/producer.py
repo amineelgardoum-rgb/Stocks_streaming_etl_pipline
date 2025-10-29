@@ -1,10 +1,10 @@
 # ----- producer of kafka to make the streaming logic ------- #
 import time
-from kafka import KafkaProducer
-import requests
-import json
-# import logging
+from create_producer import create_producer
+from fetch_job import fetch_quotes
 import os
+from heartbeat import heartbeat_check
+import threading
 from dotenv import load_dotenv
 
 load_dotenv()  # just to load the env file
@@ -12,34 +12,20 @@ api_key = os.getenv("api_key")
 if not api_key:
     raise RuntimeError("the api_key is not set ")
 
+heartbeat_topic = "heartbeat_topic"
+qoute_topic = "stock_qoutes"
 BASE_URL = "https://finnhub.io/api/v1/quote"
-SYMBOLS = ["AAPL","TSLA", "GOOGL", "AMZN"]  # this are the companies to monitor
+SYMBOLS = ["AAPL", "TSLA", "GOOGL", "AMZN"]  # this are the companies to monitor
 # init of producer
-producer = KafkaProducer(
-    bootstrap_servers=["kafka:9092"],
-    value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-    max_request_size=2 * 1024 * 1024,
+producer, send_messages = create_producer(
+    "kafka", 9092, topics=[qoute_topic, heartbeat_topic]
 )
-
-
-def fetch_quotes(symbol):
-    url = f"{BASE_URL}?symbol={symbol}&token={api_key}"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        data["symbol"] = symbol
-        data["fetched_time"] = int(time.time())
-        return data
-    except Exception as e:
-        print(f"There is a problem :{e}!,with {symbol}.")
-        return None
-
+threading.Thread(target=heartbeat_check,daemon=True).start()
 
 while True:
     for symbol in SYMBOLS:
-        quote = fetch_quotes(symbol)
+        quote = fetch_quotes(symbol, BASE_URL, api_key)
         if quote:
             print(f"Producing:{quote}")
-            producer.send("stock_qoutes", value=quote)
+            send_messages(value=quote, topic=qoute_topic)
     time.sleep(6)
