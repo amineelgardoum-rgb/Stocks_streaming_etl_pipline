@@ -41,6 +41,38 @@ This pipeline was built using a best-in-class modern data stack, emphasizing per
 
 ---
 
+## [📁](https://emojipedia.org/file-folder)Structure of the Project
+
+```bash
+Stocks_streaming_etl_pipline/
+├── .vscode/               # VS Code project settings.
+├── assets/                # Contains static assets, like the stocks_pipeline.png architecture diagram.
+├── config/                # Centralized configuration files (e.g., Kafka settings, Snowflake connection properties).
+├── consumer/ # The service that reads data from Kafka and writes raw files to MinIO (Bronze Layer).
+│   ├── consume_messages.py  # Main Kafka consumption loop and data handling logic.
+│   ├── s3_init.py           # Logic to connect to and write messages to MinIO (S3).
+│   ├── consumer.py          # Main entry point for the consumer application.
+│   └── Dockerfile           # Build instruction for the Consumer service image.
+├── dags/ # Apache Airflow Directed Acyclic Graphs (DAGs) for orchestration.
+│   ├── minio_to_snowflake.py# Main DAG for the MinIO -> Snowflake ELT process.
+│   ├── download_from_minio.py # Airflow task/utility to fetch data from MinIO.
+│   └── load_to_snowflake.py # Airflow task/utility to copy data into Snowflake.
+├── dbt_stocks/ # dbt (Data Build Tool) project for all SQL transformations.
+├── logs/                  # Runtime and service logs.
+├── plugins/               # Airflow plugins (if any custom hooks/operators are used).
+├── producer/ # The service that fetches data from Finnhub and publishes to Kafka.
+│   ├── produce_messages.py  # Function to format and send data to Kafka.
+│   ├── fetch_job.py         # Logic to fetch data from the Finnhub API.
+│   ├── producer.py          # Main entry point for the producer application.
+│   └── Dockerfile           # Build instruction for the Producer service image.
+├── venv/                  # Python virtual environment.
+├── .env                   # Environment variables (credentials, API keys).
+├── docker-compose.yml     # Defines and orchestrates all services (Kafka, Airflow, MinIO, Producer, Consumer).
+└── README.md  # Project documentation (this file).
+```
+
+---
+
 ## ⚙️ Robustness and Scalability
 
 This pipeline was specifically designed to handle high-volume streaming data with resilience:
