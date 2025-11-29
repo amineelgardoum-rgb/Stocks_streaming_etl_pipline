@@ -1,13 +1,27 @@
+{{ config(materialized='table') }}
+
+WITH raw_stock_data AS (
+    SELECT 
+        id,
+        data
+    FROM {{ source('raw', 'raw_data') }}
+    WHERE data IS NOT NULL
+)
+
 SELECT 
-    v:c::float  AS current_price,
-    v:d::float  AS change_amount,
-    v:dp::float AS change_percent,
-    v:h::float  AS day_high,
-    v:l::float  AS day_low,
-    v:o::float  AS day_open,
-    v:pc::float AS prev_close,
-    v:t::timestamp AS market_timestamp,
-    v:symbol::string AS symbol,
-    v:fetched_time::timestamp AS fetched_at  -- fixed here
-FROM {{ source('raw','bronze_stocks_quotes_raw') }}
-WHERE v:c IS NOT NULL
+    id AS raw_id,
+    (data->>'c')::float AS current_price,
+    (data->>'d')::float AS change_amount,
+    (data->>'dp')::float AS change_percent,
+    (data->>'h')::float AS day_high,
+    (data->>'l')::float AS day_low,
+    (data->>'o')::float AS day_open,
+    (data->>'pc')::float AS prev_close,
+    data->>'symbol' AS symbol,
+    CASE 
+        WHEN data->>'fetched_time' IS NOT NULL 
+        THEN TO_TIMESTAMP((data->>'fetched_time')::bigint / 1000.0)
+        ELSE NULL
+    END AS fetched_at
+FROM raw_stock_data
+WHERE (data->>'c') IS NOT NULL
