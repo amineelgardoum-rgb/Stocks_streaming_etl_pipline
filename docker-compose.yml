@@ -8,12 +8,19 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+      timeout: 5s
 
   kafka:
     image: confluentinc/cp-kafka:7.4.1
     container_name: kafka
     depends_on:
-      - zookeeper
+       zookeeper:
+        condition: service_healthy
     ports:
       - "9092:9092"
       - "29092:29092"
@@ -61,6 +68,7 @@ services:
       retries: 5
       start_period: 5s
       timeout: 2s
+    
 
   producer:
     build:
@@ -109,7 +117,7 @@ services:
   dbt:
     build:
       context: ./dbt_stocks
-    container_name: dbt-snowflake
+    container_name: dbt-postgres
     depends_on:
       - consumer
     volumes:
@@ -168,6 +176,37 @@ services:
     ports:
       - "5432:5432"
 
+  app-postgres:
+    image: postgres:15
+    container_name: app-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: stockuser
+      POSTGRES_PASSWORD: stockpass
+      POSTGRES_DB: stockdata
+    volumes:
+      - app_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stockuser -d stockdata"]
+      interval: 5s
+      retries: 5
+      start_period: 5s
+      timeout: 3s
+
+  pgadmin:
+    image: dpage/pgadmin4:7
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "9090:80"
+    depends_on:
+      - postgres
+      - app-postgres
+
   airflow-init:
     image: apache/airflow:2.10.2
     container_name: airflow-init
@@ -183,6 +222,74 @@ services:
     entrypoint: >
       /bin/bash -c "airflow db init && airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin"
 
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: es01
+    environment:
+      - node.name=es01
+      - cluster.name=docker-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es01_data:/usr/share/elasticsearch/data
+
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es02_data:/usr/share/elasticsearch/data
+
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=docker-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es03_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.3
+    container_name: kibana
+    depends_on:
+      - es01
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es01:9200
+    ports:
+      - "5601:5601"
+
+
+  docker_monitor:
+    build: ./docker_monitor
+    container_name: docker_monitor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    depends_on:
+      - es01
+
+
 volumes:
   postgres_data:
+  es01_data:
+  es02_data:
+  es03_data:
+  app_postgres_data:
+
  

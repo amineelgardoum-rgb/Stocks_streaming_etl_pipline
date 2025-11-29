@@ -1,7 +1,7 @@
 version: 2
 sources:
   - name: raw
-    database: STOCKS_MDS
-    schema: COMMON
+    database: stockdata
+    schema: public
     tables:
-      - name: bronze_stocks_quotes_raw
+      - name: raw_data

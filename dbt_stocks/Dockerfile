@@ -1,5 +1,5 @@
-# Use the official dbt-snowflake image
-FROM ghcr.io/dbt-labs/dbt-snowflake:1.8.latest
+# Use the official dbt-snowflake simage
+FROM ghcr.io/dbt-labs/dbt-postgres:1.8.latest
 
 # Set a working directory inside the container
 WORKDIR /usr/app

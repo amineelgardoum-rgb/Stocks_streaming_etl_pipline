@@ -1,8 +1,8 @@
 def create_dags(
-    DAG, PythonOperator, download_from_minio, load_to_snowflake, default_args
+    DAG, PythonOperator, download_from_minio, load_to_postgres, default_args
 ):
     with DAG(
-        dag_id="minio_to_snowflake",
+        dag_id="minio_to_postgres",
         default_args=default_args,
         schedule="* * * * *",
         catchup=False,
@@ -11,8 +11,8 @@ def create_dags(
             task_id="download_minio", python_callable=download_from_minio
         )
         task2 = PythonOperator(
-            task_id="load_snowflake",
-            python_callable=load_to_snowflake,
+            task_id="load_postgres",
+            python_callable=load_to_postgres,
             provide_context=True,
         )
         task1 >> task2

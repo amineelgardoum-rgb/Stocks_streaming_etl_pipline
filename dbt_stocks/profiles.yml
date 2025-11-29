@@ -1,0 +1,11 @@
+dbt_stocks:       
+  target: dev
+  outputs:
+    dev:
+      type: postgres   # NOT snowflake
+      host: postgres-db   # container name of your Postgres service
+      user: stockuser
+      password: stockpass
+      port: 5432
+      dbname: stockdata   # your Postgres database
+
