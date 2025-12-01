@@ -2,17 +2,17 @@
 with enriched as (
     select
         symbol,
-        cast(market_timestamp as date) as trade_date,
+        cast(fetched_at as date) as trade_date,
         day_low,
         day_high,
         current_price,
         first_value(current_price) over (
-            partition by symbol, cast(market_timestamp as date)
-            order by market_timestamp
+            partition by symbol, cast(fetched_at as date)
+            order by fetched_at
         ) as candle_open,
         last_value(current_price) over (
-            partition by symbol, cast(market_timestamp as date)
-            order by market_timestamp
+            partition by symbol, cast(fetched_at as date)
+            order by fetched_at
             rows between unbounded preceding and unbounded following
         ) as candle_close
     from {{ ref('silver_clean_stock_quotes') }}
@@ -24,8 +24,8 @@ candles as (
         trade_date as candle_time,
         min(day_low) as candle_low,
         max(day_high) as candle_high,
-        any_value(candle_open) as candle_open,
-        any_value(candle_close) as candle_close,
+        MAX(candle_open) as candle_open,
+        MAX(candle_close) as candle_close,
         avg(current_price) as trend_line
     from enriched
     group by symbol, trade_date

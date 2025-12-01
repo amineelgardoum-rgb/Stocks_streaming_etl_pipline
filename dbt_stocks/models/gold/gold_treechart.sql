@@ -1,28 +1,28 @@
 {{ config(materialized='table') }}
+
 WITH source AS (
   SELECT
     symbol,
-    TRY_CAST(current_price AS DOUBLE) AS current_price_dbl,
-    market_timestamp
+    current_price::double precision AS current_price_dbl,
+    fetched_at
   FROM {{ ref('silver_clean_stock_quotes') }}
-  -- optionally filter invalid rows:
-  WHERE TRY_CAST(current_price AS DOUBLE) IS NOT NULL
+  WHERE current_price IS NOT NULL
 ),
 
 latest_day AS (
-  -- if market_timestamp is epoch seconds (NUMBER/INT):
-  SELECT CAST(TO_TIMESTAMP_LTZ(MAX(market_timestamp)) AS DATE) AS max_day
+  -- fetched_at is already a timestamp, so just cast to date
+  SELECT MAX(fetched_at)::date AS max_day
   FROM source
 ),
 
 latest_prices AS (
   SELECT
-    symbol,
-    AVG(current_price_dbl) AS avg_price
-  FROM source
+    s.symbol,
+    AVG(s.current_price_dbl) AS avg_price
+  FROM source s
   JOIN latest_day ld
-    ON CAST(TO_TIMESTAMP_LTZ(market_timestamp) AS DATE) = ld.max_day
-  GROUP BY symbol
+    ON s.fetched_at::date = ld.max_day
+  GROUP BY s.symbol
 ),
 
 all_time_volatility AS (
@@ -43,5 +43,6 @@ SELECT
   v.volatility,
   v.relative_volatility
 FROM latest_prices lp
-JOIN all_time_volatility v ON lp.symbol = v.symbol
+JOIN all_time_volatility v 
+  ON lp.symbol = v.symbol
 ORDER BY lp.symbol

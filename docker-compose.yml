@@ -1,4 +1,4 @@
-version: "3.8"
+version: "2.4"
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.1
@@ -119,14 +119,14 @@ services:
       context: ./dbt_stocks
     container_name: dbt-postgres
     depends_on:
-      - consumer
+      app-postgres:
+        condition: service_healthy
     volumes:
       - ./dbt_stocks:/usr/app
       - ${USERPROFILE}/.dbt:/root/.dbt
     environment:
       DBT_PROFILES_DIR: /root/.dbt
-    entrypoint: ["dbt", "run"]
-
+      
   airflow-webserver:
     image: apache/airflow:2.10.2
     container_name: airflow-webserver
@@ -161,6 +161,7 @@ services:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./plugins:/opt/airflow/plugins
+      - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
 
   postgres:
