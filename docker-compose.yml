@@ -265,7 +265,6 @@ services:
     container_name: docker_monitor
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./docker_monitor:/app/docker_monitor
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     depends_on:
