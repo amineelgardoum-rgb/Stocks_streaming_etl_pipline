@@ -19,7 +19,7 @@ services:
     image: confluentinc/cp-kafka:7.4.1
     container_name: kafka
     depends_on:
-       zookeeper:
+      zookeeper:
         condition: service_healthy
     ports:
       - "9092:9092"
@@ -68,7 +68,6 @@ services:
       retries: 5
       start_period: 5s
       timeout: 2s
-    
 
   producer:
     build:
@@ -114,19 +113,6 @@ services:
     #   start_period: 5s
     #   timeout: 2s
 
-  dbt:
-    build:
-      context: ./dbt_stocks
-    container_name: dbt-postgres
-    depends_on:
-      app-postgres:
-        condition: service_healthy
-    volumes:
-      - ./dbt_stocks:/usr/app
-      - ${USERPROFILE}/.dbt:/root/.dbt
-    environment:
-      DBT_PROFILES_DIR: /root/.dbt
-      
   airflow-webserver:
     image: apache/airflow:2.10.2
     container_name: airflow-webserver
@@ -274,17 +260,16 @@ services:
     ports:
       - "5601:5601"
 
-
   docker_monitor:
     build: ./docker_monitor
     container_name: docker_monitor
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker_monitor:/app/docker_monitor
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
     depends_on:
       - es01
-
 
 volumes:
   postgres_data:
@@ -293,4 +278,6 @@ volumes:
   es03_data:
   app_postgres_data:
 
- 
+networks:
+  etl-net:
+    name: etl-net
