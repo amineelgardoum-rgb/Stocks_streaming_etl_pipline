@@ -1,0 +1,12 @@
+services:
+    docker_monitor:
+      build: ./docker_monitor
+      container_name: docker_monitor
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+        - DOCKER_HOST=unix:///var/run/docker.sock
+
+networks:
+  etl-net:
+    name: etl-net

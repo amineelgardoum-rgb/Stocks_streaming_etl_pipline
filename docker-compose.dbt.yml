@@ -4,6 +4,8 @@ services:
     build:
       context: ./dbt_stocks
     container_name: dbt-postgres
+    ports:
+      - 8082:8082
     volumes:
       - ./dbt_stocks:/usr/app
       - ${USERPROFILE}/.dbt:/root/.dbt

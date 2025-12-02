@@ -7,5 +7,4 @@ WORKDIR /usr/app
 # Copy your dbt project into the container
 COPY . /usr/app
 
-# Ensure dbt is executable
-RUN dbt --version
+

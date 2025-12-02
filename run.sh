@@ -54,6 +54,13 @@ echo -e "${BLUE}Run the dbt compose file...${RESET}"
 if docker compose -p etl -f docker-compose.dbt.yml up --build -d; then
     echo -e "${GREEN}The dbt container is up${RESET}"
 else
-    echo -e "${RED}The dbt container has a problem.${RESET}" >&2
+    echo -e "${RED}There is a problem${RESET}" 2>/dev/null
     exit 1
 fi
+echo -e "${GREEN} run the monitor container..."
+if ./run_monitor.sh ;then 
+	echo -e "${GREEN}the monitor container is up..!${RESET}"
+else 
+	echo -e "${RED}There is a problem${RESET}" 2>/dev/null
+fi
+	exit 1

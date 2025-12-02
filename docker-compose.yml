@@ -260,15 +260,7 @@ services:
     ports:
       - "5601:5601"
 
-  docker_monitor:
-    build: ./docker_monitor
-    container_name: docker_monitor
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - DOCKER_HOST=unix:///var/run/docker.sock
-    depends_on:
-      - es01
+
 
 volumes:
   postgres_data:
