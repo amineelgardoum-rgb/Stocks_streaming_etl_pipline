@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  dbt:
+    build:
+      context: ./dbt_stocks
+    container_name: dbt-postgres
+    volumes:
+      - ./dbt_stocks:/usr/app
+      - ${USERPROFILE}/.dbt:/root/.dbt
+    environment:
+      DBT_PROFILES_DIR: /root/.dbt
+    command: ["run"]
+
+networks:
+  etl-net:
+    name: etl-net
