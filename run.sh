@@ -1,66 +1,106 @@
 #!/bin/bash
 
-# Colors
-RED="\e[31m"
+# --- Colors ---
 GREEN="\e[32m"
-BLUE="\e[34m"
+RED="\e[31m"
 YELLOW="\e[33m"
+BLUE="\e[34m"
 RESET="\e[0m"
 
 DAG_ID="minio_to_postgres"
 
-echo -e "${BLUE}Starting the etl project...${RESET}"
-echo -e "${BLUE}run the docker compose...${RESET}"
-docker compose -p etl -f docker-compose.yml up --build -d --wait
 
-echo -e "${GREEN}Waiting for DAG '$DAG_ID' to appear in airflow dags list!${RESET}"
-while true; do
+# -------------------------------
+# Function: Start a compose file
+# -------------------------------
+start_compose() {
+  local project_name=$1
+  local compose_file=$2
+
+  echo -e "${BLUE}Starting Docker Compose project '$project_name' using '$compose_file'...${RESET}"
+
+  if docker compose -p "$project_name" -f "$compose_file" up --build -d --wait; then
+    echo -e "${GREEN}✅ '$project_name' started successfully.${RESET}"
+  else
+    echo -e "${RED}❌ Failed to start '$project_name'!${RESET}" >&2
+    exit 1
+  fi
+
+  echo
+}
+
+
+# ---------------------------------------
+# Function: Wait for Airflow DAG to appear
+# ---------------------------------------
+wait_for_dag() {
+  echo -e "${BLUE}Checking for DAG '$DAG_ID'...${RESET}"
+
+  while true; do
     if docker exec airflow-webserver airflow dags list 2>/dev/null | grep -q "$DAG_ID"; then
-        echo -e "${GREEN}$DAG_ID is found!${RESET}"
-        echo -e "${YELLOW}Waiting for the dag to be recognized in the postgres metadata!${RESET}"
-        sleep 20
-        break
+      echo -e "${GREEN}✅ DAG '$DAG_ID' found!${RESET}"
+      echo -e "${YELLOW}Waiting for Airflow metadata sync...${RESET}"
+      sleep 20
+      break
     else
-        echo -e "${RED}$DAG_ID is not found, waiting 10 seconds!${RESET}"
-        sleep 10
+      echo -e "${RED}DAG not found, retrying in 10 seconds...${RESET}"
+      sleep 10
     fi
-done
+  done
 
-sleep 5
-echo -e "${BLUE}Continue...${RESET}"
-echo -e "${GREEN}Running the $DAG_ID DAG.${RESET}"
+  echo
+}
 
-if docker exec airflow-webserver airflow dags trigger "$DAG_ID"; then
-    echo -e "${GREEN}The $DAG_ID was triggered successfully!${RESET}"
-else
-    echo -e "${RED}The $DAG_ID is not triggered successfully!${RESET}" >&2
+
+# ---------------------------------------
+# Function: Trigger and unpause a DAG
+# ---------------------------------------
+trigger_dag() {
+  echo -e "${BLUE}Triggering DAG '$DAG_ID'...${RESET}"
+
+  if docker exec airflow-webserver airflow dags trigger "$DAG_ID"; then
+    echo -e "${GREEN}✅ DAG triggered successfully.${RESET}"
+  else
+    echo -e "${RED}❌ Failed to trigger DAG!${RESET}" >&2
     exit 1
-fi
+  fi
 
-echo -e "${YELLOW}Waiting to be sure the dag is triggered...${RESET}"
-sleep 10
+  echo -e "${YELLOW}Waiting before unpausing DAG...${RESET}"
+  sleep 10
 
-echo -e "${BLUE}Unpause the dag $DAG_ID..!${RESET}"
-if docker exec airflow-webserver airflow dags unpause minio_to_postgres; then
-    echo -e "${GREEN}The dag is unpaused successfully!${RESET}"
-else
-    echo -e "${RED}There is a problem${RESET}" 2>/dev/null
-fi
+  echo -e "${BLUE}Unpausing DAG '$DAG_ID'...${RESET}"
+  if docker exec airflow-webserver airflow dags unpause "$DAG_ID"; then
+    echo -e "${GREEN}✅ DAG unpaused.${RESET}"
+  else
+    echo -e "${RED}❌ Failed to unpause DAG.${RESET}"
+  fi
 
-echo -e "${YELLOW}Waiting for the dag to successfully create the table in postgres...${RESET}"
+  echo
+}
+
+
+# ---------------------------------------
+# MAIN RUN SEQUENCE
+# ---------------------------------------
+
+# 1) Start main ETL compose
+start_compose "etl" "docker-compose.yml"
+
+# 2) Wait for DAG
+wait_for_dag
+
+# 3) Trigger + unpause DAG
+trigger_dag
+
+# 4) Allow DAG to run and create tables
+echo -e "${YELLOW}Waiting 60 seconds for DAG to initialize tables...${RESET}"
 sleep 60
+echo
 
-echo -e "${BLUE}Run the dbt compose file...${RESET}"
-if docker compose -p etl -f docker-compose.dbt.yml up --build -d; then
-    echo -e "${GREEN}The dbt container is up${RESET}"
-else
-    echo -e "${RED}There is a problem${RESET}" 2>/dev/null
-    exit 1
-fi
-echo -e "${GREEN} run the monitor container..."
-if ./run_monitor.sh ;then 
-	echo -e "${GREEN}the monitor container is up..!${RESET}"
-else 
-	echo -e "${RED}There is a problem${RESET}" 2>/dev/null
-fi
-	exit 1
+# 5) Start DBT compose
+start_compose "etl-dbt" "docker-compose.dbt.yml"
+
+# 6) Start Monitor compose
+start_compose "etl-monitor" "docker-compose.monitor.yml"
+
+echo -e "${GREEN}` All services are up and the ETL pipeline is running!${RESET}"
