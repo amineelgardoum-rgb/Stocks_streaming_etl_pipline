@@ -5,4 +5,4 @@ __pycache__
 plugins
 .env
 venv
-./requirements.txt
+requirements.txt
