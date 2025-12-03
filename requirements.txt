@@ -6,3 +6,4 @@ dbt-snowflake
 requests
 dotenv
 apache-airflow
+dbt-postgres
