@@ -116,7 +116,7 @@ The final layer exposes transformed data for consumption:
 
 ## 🛠️ Technology Stack
 
-<<<<<<< HEAD
+
 | Layer                    | Technology     | Purpose                                    |
 | ------------------------ | -------------- | ------------------------------------------ |
 | **Data Source**    | Finnhub API    | Real-time financial market data provider   |
@@ -138,7 +138,7 @@ This pipeline was built using a best-in-class modern data stack, emphasizing per
 | **Transformation**    | ![\w](https://img.shields.io/badge/dbt-FF6945?style=for-the-badge&logo=dbt&logoColor=white)                                                                                                                                  | Defines data models using modular, reusable SQL transformations to build the Silver and Gold layers, providing robust testing and documentation.                     |
 | **Data Warehouse**    | ![\w](https://img.shields.io/badge/Postgres-22B4E8?style=for-the-badge&logo=snowflake&logoColor=white)                                                                                                                      | Cloud-native, scalable Data Warehouse used for final storage, complex querying, and providing the compute layer for dbt transformations.                             |
 | **Monitoring**        | ![\w](https://img.shields.io/badge/Kafdrop-007ACC?style=for-the-badge&logoColor=white)                                                                                                                                       | Web UI for real-time inspection of Kafka topic partitions and message consumption offsets.                                                                           |
->>>>>>> 892ea5c823d4aeecdbce5fd27b81d710324100db
+
 
 ---
 
