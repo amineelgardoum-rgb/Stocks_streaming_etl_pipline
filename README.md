@@ -126,8 +126,6 @@ The final layer exposes transformed data for consumption:
 | **Data Warehouse** | PostgreSQL     | Relational database for Silver/Gold layers |
 | **Transformation** | dbt            | SQL-based data modeling and testing        |
 | **API Layer**      | RESTful API    | Data consumption interface                 |
-=======
-This pipeline was built using a best-in-class modern data stack, emphasizing performance, scalability, and ease of maintenance.
 
 | Category                    | Tool / Service                                                                                                                                                                                                             | Technical Functionality and Rationale                                                                                                                                |
 | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
