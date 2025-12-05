@@ -14,7 +14,8 @@ This project implements a **production-grade, event-driven data pipeline** that 
 ![Architecture Diagram](assets/data_warehouse.jpg)
 ## Minimal Architecture
 ![Architecture Diagram](assets/archi.svg)
-
+## DAG 
+![Architecture Diagram](assets/DAg.jpg)
 ----
 **Key Technical Highlights:**
 
