@@ -108,6 +108,7 @@ The final layer exposes transformed data for consumption:
 
 ## 🛠️ Technology Stack
 
+<<<<<<< HEAD
 | Layer                    | Technology     | Purpose                                    |
 | ------------------------ | -------------- | ------------------------------------------ |
 | **Data Source**    | Finnhub API    | Real-time financial market data provider   |
@@ -117,6 +118,19 @@ The final layer exposes transformed data for consumption:
 | **Data Warehouse** | PostgreSQL     | Relational database for Silver/Gold layers |
 | **Transformation** | dbt            | SQL-based data modeling and testing        |
 | **API Layer**      | RESTful API    | Data consumption interface                 |
+=======
+This pipeline was built using a best-in-class modern data stack, emphasizing performance, scalability, and ease of maintenance.
+
+| Category                    | Tool / Service                                                                                                                                                                                                             | Technical Functionality and Rationale                                                                                                                                |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data Ingestion**    | ![\w](https://img.shields.io/badge/Finnhub-000000?style=for-the-badge&logo=finnhub&logoColor=white)                                                                                                                          | Primary source for streaming real-time stock market data.                                                                                                            |
+| **Streaming Layer**   | ![\w](https://img.shields.io/badge/Kafka-232F3E?style=for-the-badge&logo=apachekafka&logoColor=white)&nbsp;&nbsp;![\w](https://img.shields.io/badge/Zookeeper-232F3E?style=for-the-badge&logo=apachezookeeper&logoColor=white) | Provides a distributed commit log for high-throughput, fault-tolerant message delivery, decoupling producers from consumers. Zookeeper handles cluster coordination. |
+| **Data Lake Staging** | ![\w](https://img.shields.io/badge/MinIO-FF0000?style=for-the-badge&logo=minio&logoColor=white)                                                                                                                              | Serves as the immutable Bronze Layer (RAW DATA) for historical storage, ensuring data is never lost.                                                                 |
+| **Orchestration**     | ![\w](https://img.shields.io/badge/Airflow-0172E3?style=for-the-badge&logo=apacheairflow&logoColor=white)                                                                                                                    | Manages complex DAGs (Directed Acyclic Graphs) for scheduling, monitoring, and idempotently retrying ELT jobs.                                                       |
+| **Transformation**    | ![\w](https://img.shields.io/badge/dbt-FF6945?style=for-the-badge&logo=dbt&logoColor=white)                                                                                                                                  | Defines data models using modular, reusable SQL transformations to build the Silver and Gold layers, providing robust testing and documentation.                     |
+| **Data Warehouse**    | ![\w](https://img.shields.io/badge/Postgres-22B4E8?style=for-the-badge&logo=snowflake&logoColor=white)                                                                                                                      | Cloud-native, scalable Data Warehouse used for final storage, complex querying, and providing the compute layer for dbt transformations.                             |
+| **Monitoring**        | ![\w](https://img.shields.io/badge/Kafdrop-007ACC?style=for-the-badge&logoColor=white)                                                                                                                                       | Web UI for real-time inspection of Kafka topic partitions and message consumption offsets.                                                                           |
+>>>>>>> 892ea5c823d4aeecdbce5fd27b81d710324100db
 
 ---
 
