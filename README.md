@@ -1,4 +1,4 @@
-\# 📈 Real-Time Financial Market Data Pipeline
+## 📈 Real-Time Financial Market Data Pipeline
 
 ## 🌟 Project Overview
 
@@ -15,7 +15,7 @@ This project implements a **production-grade, event-driven data pipeline** that 
 ## Minimal Architecture
 ![Architecture Diagram](assets/archi.svg)
 ## DAG 
-![Architecture Diagram](assets/DAg.jpg)
+![Architecture Diagram](assets/DAg.png)
 ----
 **Key Technical Highlights:**
 
