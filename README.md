@@ -14,6 +14,8 @@ This project implements a **production-grade, event-driven data pipeline** that 
 ![Architecture Diagram](assets/data_warehouse.jpg)
 ## Minimal Architecture
 ![Architecture Diagram](assets/archi.svg)
+
+----
 **Key Technical Highlights:**
 
 * **Event-Driven Architecture** using Apache Kafka for real-time data streaming and decoupling
