@@ -20,9 +20,9 @@ shutdown_compose() {
 shutdown_compose "etl" "docker-compose.yml"
 
 # Shutdown DBT containers
-shutdown_compose "etl-dbt" "docker-compose.dbt.yml"
+shutdown_compose "etl" "docker-compose.dbt.yml"
 
 # Shutdown Monitor containers
-shutdown_compose "etl-monitor" "docker-compose.monitor.yml"
-
+shutdown_compose "etl" "docker-compose.monitor.yml"
+shutdown_compose "etl" "docker-compose.api.yml"
 echo "All requested Docker Compose projects have been processed."

@@ -1,0 +1,15 @@
+services:
+  api:
+    build:
+      context: ./api
+    container_name: api_data_stages
+    ports:
+      - 8000:8000
+    volumes:
+      - ./api:/app/api
+    env_file:
+      - ./.env
+
+networks:
+  etl-net:
+    name: etl-net
