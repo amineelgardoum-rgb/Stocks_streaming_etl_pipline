@@ -8,7 +8,12 @@
 ![dbt](https://img.shields.io/badge/dbt-FF6945?style=for-the-badge&logo=dbt&logoColor=white)
 
 This project implements a **production-grade, event-driven data pipeline** that ingests, processes, and transforms real-time financial market data from **Finnhub** into actionable analytics. The architecture follows modern data engineering best practices with a clear separation of concerns across extraction, streaming, storage, and transformation layers.
-
+## Architecture
+![Architecture Diagram](assets/stocks_pipeline.jpg)
+## Data WareHouse Architecture
+![Architecture Diagram](assets/data_warehouse.jpg)
+## Minimal Architecture
+![Architecture Diagram](assets/archi.svg)
 **Key Technical Highlights:**
 
 * **Event-Driven Architecture** using Apache Kafka for real-time data streaming and decoupling
