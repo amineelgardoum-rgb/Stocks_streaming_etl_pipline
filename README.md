@@ -1,126 +1,288 @@
-# 📈 Real-Time Financial Market Data Pipeline (Snowflake, Kafka, Airflow)
+\# 📈 Real-Time Financial Market Data Pipeline
 
 ## 🌟 Project Overview
 
-![\w](https://img.shields.io/badge/Snowflake-22B4E8?style=for-the-badge&logo=snowflake&logoColor=white)
-![\w](https://img.shields.io/badge/Apache%20Kafka-232F3E?style=for-the-badge&logo=apachekafka&logoColor=white)
-![\w](https://img.shields.io/badge/Airflow-0172E3?style=for-the-badge&logo=apacheairflow&logoColor=white)
-![\w](https://img.shields.io/badge/dbt-FF6945?style=for-the-badge&logo=dbt&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-232F3E?style=for-the-badge&logo=apachekafka&logoColor=white)
+![Airflow](https://img.shields.io/badge/Airflow-0172E3?style=for-the-badge&logo=apacheairflow&logoColor=white)
+![dbt](https://img.shields.io/badge/dbt-FF6945?style=for-the-badge&logo=dbt&logoColor=white)
 
-This project details the design and deployment of a **highly scalable, fault-tolerant data pipeline** engineered to ingest, process, and analyze real-time market data from **Finnhub**. The architecture leverages cloud-native principles, utilizing a decoupled streaming layer to ensure low-latency data availability for downstream analytics.
+This project implements a **production-grade, event-driven data pipeline** that ingests, processes, and transforms real-time financial market data from **Finnhub** into actionable analytics. The architecture follows modern data engineering best practices with a clear separation of concerns across extraction, streaming, storage, and transformation layers.
 
-**Key achievements include:**
+**Key Technical Highlights:**
 
-* Implementing a **Medallion Architecture (Bronze, Silver, Gold)** within **Snowflake** for strict data governance and quality assurance.
-* Establishing reliable, scheduled data transformations using **dbt** and **Airflow**.
-* Utilizing **Apache Kafka** to decouple the data ingestion from the processing logic, enabling massive horizontal scaling.
+* **Event-Driven Architecture** using Apache Kafka for real-time data streaming and decoupling
+* **Medallion Architecture** (Bronze/Silver/Gold layers) for progressive data refinement
+* **Orchestrated ELT workflows** with Apache Airflow for reliable, scheduled transformations
+* **Analytics-ready data models** built with dbt for business intelligence and downstream consumption
 
 ---
 
-## 🏛️ System Architecture
+## 🏗️ Architecture Overview
 
-The following diagram illustrates the component integration and the progression of data through the various layers of the pipeline, from external ingestion to final analytic storage.
+The pipeline consists of four primary layers, each handling a specific stage of the data journey:
 
-<img src="assets/stocks_pipeline.jpg" alt="Data Pipeline Architecture Diagram" style="width:100%; max-width:1000px;">
+### 1️⃣ **Extract Layer** (Data Ingestion)
+
+**Components:** Finnhub API → Kafka Producer
+
+The pipeline begins with the **Kafka Producer** service, which continuously fetches real-time stock market data from the **Finnhub API**. This includes:
+
+- Real-time stock prices
+- Trading volumes
+- Market metadata
+
+The producer formats and publishes this data to Kafka topics, creating a continuous stream of financial events.
+
+---
+
+### 2️⃣ **Streaming Layer** (Message Broker)
+
+**Components:** Kafka Cluster (Producer, Broker, Consumer)
+
+At the heart of the architecture sits **Apache Kafka**, providing:
+
+- **High-throughput message streaming** with distributed partitions
+- **Fault tolerance** through replication across brokers
+- **Decoupling** between data producers and consumers
+- **Backpressure handling** allowing consumers to process at their own pace
+
+The Kafka cluster consists of:
+
+- **Kafka Producer**: Publishes financial events to topics
+- **Kafka Broker**: Manages topic partitions and message persistence
+- **Kafka Consumer**: Subscribes to topics and delivers data to downstream storage
+
+This architecture ensures that even if downstream systems are temporarily unavailable, no data is lost—messages remain in Kafka until successfully processed.
+
+---
+
+### 3️⃣ **Transform and Load Layer** (ELT Processing)
+
+**Components:** Airflow (Orchestration) → MinIO (Data Lake) → PostgreSQL (Data Warehouse) → dbt (Transformation)
+
+This layer handles the core ELT (Extract, Load, Transform) workflow:
+
+#### **a) Data Lake Storage (Bronze Layer)**
+
+The **Kafka Consumer** reads messages from Kafka topics and writes raw data to **MinIO**, an S3-compatible object storage serving as the Bronze layer. This creates an immutable, historical record of all ingested data.
+
+#### **b) Orchestration**
+
+**Apache Airflow** orchestrates the entire ELT process through scheduled DAGs:
+
+- Monitors MinIO for new data files
+- Triggers data loading into the warehouse
+- Manages dbt transformation jobs
+- Handles retries and failure recovery
+
+#### **c) Data Warehouse (Silver & Gold Layers)**
+
+Data flows from MinIO into **PostgreSQL** (labeled as the Data Warehouse in the architecture), where:
+
+- **Silver Layer**: Cleaned and standardized data with basic transformations
+- **Gold Layer**: Business-ready aggregated metrics and analytical models
+
+#### **d) Transformation with dbt**
+
+**dbt (data build tool)** manages all SQL-based transformations:
+
+- Defines modular, version-controlled data models
+- Implements data quality tests
+- Documents data lineage
+- Builds the Silver and Gold layer tables incrementally
+
+---
+
+### 4️⃣ **Consumption Layer** (Analytics & APIs)
+
+**Components:** RESTful API (with green lightning bolt icon)
+
+The final layer exposes transformed data for consumption:
+
+- **RESTful API** provides programmatic access to analytics-ready datasets
+- Supports integration with BI tools, dashboards, and downstream applications
+- Serves real-time and historical financial metrics from the Gold layer
 
 ---
 
 ## 🛠️ Technology Stack
 
-This pipeline was built using a best-in-class modern data stack, emphasizing performance, scalability, and ease of maintenance.
-
-| Category                    | Tool / Service                                                                                                                                                                                                             | Technical Functionality and Rationale                                                                                                                                |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Data Ingestion**    | ![\w](https://img.shields.io/badge/Finnhub-000000?style=for-the-badge&logo=finnhub&logoColor=white)                                                                                                                          | Primary source for streaming real-time stock market data.                                                                                                            |
-| **Streaming Layer**   | ![\w](https://img.shields.io/badge/Kafka-232F3E?style=for-the-badge&logo=apachekafka&logoColor=white)&nbsp;&nbsp;![\w](https://img.shields.io/badge/Zookeeper-232F3E?style=for-the-badge&logo=apachezookeeper&logoColor=white) | Provides a distributed commit log for high-throughput, fault-tolerant message delivery, decoupling producers from consumers. Zookeeper handles cluster coordination. |
-| **Data Lake Staging** | ![\w](https://img.shields.io/badge/MinIO-FF0000?style=for-the-badge&logo=minio&logoColor=white)                                                                                                                              | Serves as the immutable Bronze Layer (RAW DATA) for historical storage, ensuring data is never lost.                                                                 |
-| **Orchestration**     | ![\w](https://img.shields.io/badge/Airflow-0172E3?style=for-the-badge&logo=apacheairflow&logoColor=white)                                                                                                                    | Manages complex DAGs (Directed Acyclic Graphs) for scheduling, monitoring, and idempotently retrying ELT jobs.                                                       |
-| **Transformation**    | ![\w](https://img.shields.io/badge/dbt-FF6945?style=for-the-badge&logo=dbt&logoColor=white)                                                                                                                                  | Defines data models using modular, reusable SQL transformations to build the Silver and Gold layers, providing robust testing and documentation.                     |
-| **Data Warehouse**    | ![\w](https://img.shields.io/badge/Snowflake-22B4E8?style=for-the-badge&logo=snowflake&logoColor=white)                                                                                                                      | Cloud-native, scalable Data Warehouse used for final storage, complex querying, and providing the compute layer for dbt transformations.                             |
-| **Monitoring**        | ![\w](https://img.shields.io/badge/Kafdrop-007ACC?style=for-the-badge&logoColor=white)                                                                                                                                       | Web UI for real-time inspection of Kafka topic partitions and message consumption offsets.                                                                           |
+| Layer                    | Technology     | Purpose                                    |
+| ------------------------ | -------------- | ------------------------------------------ |
+| **Data Source**    | Finnhub API    | Real-time financial market data provider   |
+| **Streaming**      | Apache Kafka   | Distributed event streaming platform       |
+| **Object Storage** | MinIO          | S3-compatible data lake (Bronze layer)     |
+| **Orchestration**  | Apache Airflow | Workflow automation and scheduling         |
+| **Data Warehouse** | PostgreSQL     | Relational database for Silver/Gold layers |
+| **Transformation** | dbt            | SQL-based data modeling and testing        |
+| **API Layer**      | RESTful API    | Data consumption interface                 |
 
 ---
 
-## [📁](https://emojipedia.org/file-folder)Structure of the Project
+## 📊 Data Flow Journey
+
+1. **Ingestion**: Finnhub API delivers real-time market data to the Kafka Producer
+2. **Streaming**: Producer publishes events to Kafka topics, where they're persisted across broker nodes
+3. **Raw Storage**: Consumer reads from Kafka and writes raw JSON/CSV files to MinIO (Bronze layer)
+4. **Orchestration**: Airflow triggers scheduled DAGs to process new data
+5. **Loading**: Data is copied from MinIO into PostgreSQL staging tables
+6. **Transformation**: dbt runs SQL models to create cleaned (Silver) and aggregated (Gold) datasets
+7. **Serving**: RESTful API exposes transformed data for analytics and reporting
+
+---
+
+## 🔑 Key Architectural Decisions
+
+### **Why Kafka?**
+
+- Handles millions of events per second with horizontal scalability
+- Provides guaranteed message delivery and ordering
+- Decouples data ingestion from processing, preventing cascading failures
+
+### **Why Medallion Architecture?**
+
+- **Bronze (Raw)**: Immutable source of truth for data recovery and auditing
+- **Silver (Cleaned)**: Standardized data ready for analytics
+- **Gold (Aggregated)**: Pre-computed business metrics for fast querying
+
+### **Why Airflow + dbt?**
+
+- Airflow manages infrastructure tasks (file transfers, scheduling)
+- dbt focuses on SQL transformations with built-in testing and documentation
+- Clear separation of concerns improves maintainability
+
+### **Why PostgreSQL?**
+
+Based on the architecture diagram, this implementation uses PostgreSQL as the data warehouse, which provides:
+
+- Cost-effective solution for moderate data volumes
+- Full SQL compliance for complex analytics
+- Easy integration with dbt and other open-source tools
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Python 3.9+
+- Finnhub API key
+- PostgreSQL credentials
+
+### Quick Start
 
 ```bash
+# Clone the repository
+git clone https://github.com/amineelgardoum-rgb/Stocks_streaming_etl_pipline.git
+cd Stocks_streaming_etl_pipline
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your credentials
+
+# Start all services
+./run.sh
+# Or manually: docker-compose up -d
+
+# Access UIs
+# Airflow: http://localhost:8080 (admin/admin)
+# Kafdrop: http://localhost:9000
+# MinIO: http://localhost:9001
+```
+
+### Running the Pipeline
+
+1. **Verify Kafka is streaming**: Check Kafdrop UI for active topics and messages
+2. **Configure Airflow connections**: Add PostgreSQL, MinIO, and Finnhub credentials
+3. **Trigger the DAG**: Enable `minio_to_snowflake` DAG in Airflow UI (note: despite the name, this loads to PostgreSQL)
+4. **Monitor execution**: Watch task progress in Airflow and data flow in Kafdrop
+5. **Query results**: Connect to PostgreSQL and query Gold layer tables
+
+---
+
+## 📁 Project Structure
+
+```
 Stocks_streaming_etl_pipline/
-├── .vscode/               # VS Code project settings.
-├── assets/                # Contains static assets, like the stocks_pipeline.png architecture diagram.
-├── config/                # Centralized configuration files (e.g., Kafka settings, Snowflake connection properties).
-├── consumer/ # The service that reads data from Kafka and writes raw files to MinIO (Bronze Layer).
-│   ├── consume_messages.py  # Main Kafka consumption loop and data handling logic.
-│   ├── s3_init.py           # Logic to connect to and write messages to MinIO (S3).
-│   ├── consumer.py          # Main entry point for the consumer application.
-│   └── Dockerfile           # Build instruction for the Consumer service image.
-├── dags/ # Apache Airflow Directed Acyclic Graphs (DAGs) for orchestration.
-│   ├── minio_to_snowflake.py# Main DAG for the MinIO -> Snowflake ELT process.
-│   ├── download_from_minio.py # Airflow task/utility to fetch data from MinIO.
-│   └── load_to_snowflake.py # Airflow task/utility to copy data into Snowflake.
-├── dbt_stocks/ # dbt (Data Build Tool) project for all SQL transformations.
-├── logs/                  # Runtime and service logs.
-├── plugins/               # Airflow plugins (if any custom hooks/operators are used).
-├── producer/ # The service that fetches data from Finnhub and publishes to Kafka.
-│   ├── produce_messages.py  # Function to format and send data to Kafka.
-│   ├── fetch_job.py         # Logic to fetch data from the Finnhub API.
-│   ├── producer.py          # Main entry point for the producer application.
-│   └── Dockerfile           # Build instruction for the Producer service image.
-├── venv/                  # Python virtual environment.
-├── .env                   # Environment variables (credentials, API keys).
-├── docker-compose.yml     # Defines and orchestrates all services (Kafka, Airflow, MinIO, Producer, Consumer).
-└── README.md  # Project documentation (this file).
+├── api/                          # RESTful API service
+│   ├── routers/                 # API route handlers
+│   ├── utils/                   # Helper utilities
+│   ├── api.py                   # Main FastAPI application
+│   ├── Dockerfile               # API container build
+│   └── requirements.txt         # API dependencies
+├── producer/                     # Kafka producer service
+│   ├── producer.py              # Main entry point
+│   ├── fetch_job.py             # Finnhub API integration
+│   ├── produce_messages.py      # Kafka publishing logic
+│   ├── Dockerfile               # Producer container build
+│   └── requirements.txt         # Producer dependencies
+├── consumer/                     # Kafka consumer service
+│   ├── consumer.py              # Main entry point
+│   ├── consume_messages.py      # Kafka consumption logic
+│   ├── s3_init.py               # MinIO integration
+│   ├── Dockerfile               # Consumer container build
+│   └── requirements.txt         # Consumer dependencies
+├── dags/                         # Airflow DAGs
+│   ├── minio_to_postgres.py    # Main ELT orchestration
+|  
+├── dbt_stocks/                   # dbt transformation project
+│   ├── models/
+│   │   ├── bronze/              # Raw data models
+│   │   ├── silver/              # Cleaned data models
+│   │   └── gold/                # Analytics models
+│   ├── tests/                   # Data quality tests
+│   └── dbt_project.yml          # dbt configuration
+├── docker_monitor/               # Container monitoring tools
+├── config/                       # Centralized configuration
+├── assets/                       # Documentation assets
+│   ├── stocks_pipeline.jpg      # Architecture diagram
+│   ├── data_warehouse.jpg       # Warehouse schema
+│   └── archi.svg                # Editable architecture
+├── logs/                         # Application logs
+├── plugins/                      # Airflow custom plugins
+├── venv/                         # Python virtual environment
+├── docker-compose.yml            # Main service orchestration
+├── docker-compose.api.yml        # API service config
+├── docker-compose.dbt.yml        # dbt service config
+├── docker-compose.monitor.yml    # Monitoring service config
+├── run.sh                        # Startup script
+├── down.sh                       # Teardown script   
+├── .gitignore                    # Git ignore rules
+├── requirements.txt              # Python dependencies
+└── README.md                     # Project documentation
 ```
 
 ---
 
-## ⚙️ Robustness and Scalability
+## 🔮 Future Enhancements
 
-This pipeline was specifically designed to handle high-volume streaming data with resilience:
-
-* **Decoupling:** **Kafka** acts as a reliable buffer, allowing consumers to process data at their own pace and ensuring the system remains operational even during downstream outages.
-* **Idempotency:** All **Airflow** tasks and **dbt** models are designed to be idempotent, allowing tasks to be safely re-run without creating duplicate or incorrect records, which is crucial for reliable failure recovery.
-* **Layered Architecture:** The three-tier (Bronze, Silver, Gold) structure isolates raw, clean, and modeled data. This means any errors in the Gold layer can be traced back and accurately rebuilt from the immutable Bronze layer.
-* **Cloud-Native Scale:** **Snowflake** provides instant, elastic compute resources, ensuring performance scales dynamically with data volume and query complexity.
-
----
-
-## 🚀 Setup and Deployment
-
-### Prerequisites
-
-To run this project locally, you will need:
-
-* **Docker** and **Docker Compose**
-* Access and credentials for a **Snowflake** environment.
-* Necessary **API keys** (e.g., Finnhub, stored securely in Airflow connections).
-
-### Execution Steps
-
-1. **Clone the Repository:**
-   ```bash
-   # Clone the project repository
-   git clone https://github.com/amineelgardoum-rgb/Stocks_streaming_etl_pipline.git
-   cd stock-data-pipeline
-   ```
-2. **Service Initialization:**
-   * Start all containerized services (**Kafka, Zookeeper, MinIO, Airflow**, etc.) using Docker Compose:
-     ```bash
-     # Start all services in detached mode
-     docker-compose up -d
-     ```
-3. **Configure Airflow:**
-   * Access the **Airflow UI** (`http://localhost:8080`),you can login use admin in username and also admin in the password and configure connections for **Snowflake**, **MinIO**, and the **Finnhub** API key.
-4. **Data Modeling:**
-   * Verify **dbt** profiles are correctly configured to connect to **Snowflake**.
-   * Run initial dbt seed files and tests.
-5. **Run Pipeline:**
-   * Unpause the main **Airflow DAG**  minio_to_snowflake to begin data flow from the minio (data lake) to snowflake(data warehouse).
-   * Monitor stream health via **Kafdrop** (`http://localhost:9000` - *Assuming port 9000 for Kafdrop*) and task status via the Airflow UI.
+- **Real-time Dashboards**: Integrate Streamlit or Apache Superset for live visualization
+- **Data Quality Monitoring**: Implement Great Expectations for automated data validation
+- **Infrastructure as Code**: Add Terraform modules for cloud deployment
+- **Machine Learning Integration**: Build predictive models on Gold layer data
+- **Multi-region Deployment**: Expand to global Kafka clusters for reduced latency
+- **Change Data Capture**: Add CDC capabilities for incremental processing
 
 ---
 
-## 🔭 Future Enhancements
+## 📝 Additional Notes
 
-* Integrating a visualization layer (e.g., Streamlit or Plotly Dash) for real-time dashboarding directly from the Gold layer.
-* Implementing **Data Quality Checks (Great Expectations/dbt tests)** across all Silver and Gold models to enforce strict data integrity rules.
-* Automating infrastructure provisioning using **Terraform** for full Infrastructure as Code (IaC) compliance.
+**Monitoring**: The pipeline includes Kafdrop for Kafka topic inspection, but production deployments should add:
+
+- Prometheus + Grafana for metrics
+- ELK stack for centralized logging
+- Airflow SLAs for pipeline health alerts
+
+**Scalability**: The current architecture supports:
+
+- Horizontal scaling of Kafka producers/consumers
+- Airflow worker parallelization
+- PostgreSQL read replicas for query offloading
+
+**Data Retention**: Configure retention policies based on requirements:
+
+- Kafka: 7-day message retention (configurable)
+- MinIO: Indefinite raw data storage
+- PostgreSQL: Archive old partitions to cold storage
