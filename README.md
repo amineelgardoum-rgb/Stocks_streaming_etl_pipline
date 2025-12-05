@@ -21,7 +21,7 @@ This project details the design and deployment of a **highly scalable, fault-tol
 
 The following diagram illustrates the component integration and the progression of data through the various layers of the pipeline, from external ingestion to final analytic storage.
 
-<img src="assets/stocks_pipeline.png" alt="Data Pipeline Architecture Diagram" style="width:100%; max-width:1000px;">
+<img src="assets/stocks_pipeline.jpg" alt="Data Pipeline Architecture Diagram" style="width:100%; max-width:1000px;">
 
 ---
 
